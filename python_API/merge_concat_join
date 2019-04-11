@@ -1,0 +1,208 @@
+Merge
+1 首先建立两个新的DataFrame
+import pandas as pd 
+import numpy as np 
+
+df1=pd.DataFrame({'key':['a','b','c','d','e'],'data2':np.arange(5)})
+df2=pd.DataFrame({'key':['a','b','c'],'data1':np.arange(3)})
+
+In [238]: df1
+Out[238]: 
+   data1 key
+0      0   a
+1      1   b
+2      2   c
+3      3   d
+4      4   e
+
+In [239]: df2
+Out[239]: 
+   data1 key
+0      0   a
+1      1   b
+2      2   c 
+
+2 使用merge函数合并
+data=pd.merge(df1,df2,on='key',how='left')
+
+示例如下：
+In [30]: data=pd.merge(df1,df2,on='key',how='left')
+In [31]: data
+Out[31]: 
+   data2 key  data1
+0      0   a    0.0
+1      1   b    1.0
+2      2   c    2.0
+3      3   d    NaN
+4      4   e    NaN
+
+通过indicator表明merge的方式(这个功能日常工作中我比较少用）
+In [32]: data=pd.merge(df1,df2,on='key',how='left',indicator=True)
+In [33]: data
+Out[33]: 
+   data2 key  data1     _merge
+0      0   a    0.0       both
+1      1   b    1.0       both
+2      2   c    2.0       both
+3      3   d    NaN  left_only
+4      4   e    NaN  left_only
+
+当两个数据集合并的列名不相同时用 left_on,right_on
+df1=df1.rename(columns={'key':'key1'})
+data=pd.merge(df1,df2,left_on='key1',right_on='key',how='left')
+
+In [60]: data
+Out[60]: 
+   data2 key1  data1  key
+0      0    a    0.0    a
+1      1    b    1.0    b
+2      2    c    2.0    c
+3      3    d    NaN  NaN
+4      4    e    NaN  NaN
+
+data数据集将两个列名不相同的数据合并在一起了!
+注：merge函数默认连接方式是inner，另外有left,right,outer等
+3 多数据集合并
+是针对合并后的数据再合并，不是一次性合并几个数据集
+df1=pd.DataFrame({'key':['a','b','c','d','e'],'data1':np.arange(5)})
+df2=pd.DataFrame({'key':['a','b','c'],'data2':np.arange(3)})
+df3=pd.DataFrame({'key':['a','b','c','d'],'data3':np.arange(4)})
+
+data=pd.merge(pd.merge(df1,df2,on='key',how='left'),df3,on='key',how='left')
+In [55]: data
+Out[55]: 
+   data1 key  data2  data3
+0      0   a    0.0    0.0
+1      1   b    1.0    1.0
+2      2   c    2.0    2.0
+3      3   d    NaN    3.0
+4      4   e    NaN    NaN
+
+
+4 多条件合并
+df1=pd.DataFrame({'key':['a','b','c','d','e'],'key1': 
+      ['one','one','two','one','two'],'data1':np.arange(5)})
+df2=pd.DataFrame({'key':['a','b','c'],'key1': 
+      ['one','one','two'],'data2':np.arange(3)})
+
+data=pd.merge(df1,df2,on=['key','key1'],how='left')
+
+In [57]: data
+Out[57]: 
+   data1 key key1  data2
+0      0   a  one    0.0
+1      1   b  one    1.0
+2      2   c  two    2.0
+3      3   d  one    NaN
+4      4   e  two    NaN
+
+
+备注：需要注意的是使用merge合并时，两个数据集的合并条件类型须一致。
+Concat(类似numpy的concatenate)
+合并两个数据集，可在行或者列上合并（axis)
+#默认情况下axis=0 
+
+data=pd.concat([df1,df2])
+data1=pd.concat([df1,df2],axis=1)
+
+In [13]: data=pd.concat([df1,df2])
+
+In [14]: data
+Out[14]: 
+   data1  data2 key
+0    NaN    0.0   a
+1    NaN    1.0   b
+2    NaN    2.0   c
+3    NaN    3.0   d
+4    NaN    4.0   e
+0    0.0    NaN   a
+1    1.0    NaN   b
+2    2.0    NaN   c
+
+ignore_index 不保留原来连接轴上的索引，生成一组新索引
+In [74]: data=pd.concat([df1,df2],ignore_index=True)
+
+In [75]: data
+Out[75]: 
+   data1  data2 key
+0    NaN    0.0   a
+1    NaN    1.0   b
+2    NaN    2.0   c
+3    NaN    3.0   d
+4    NaN    4.0   e
+5    0.0    NaN   a
+6    1.0    NaN   b
+7    2.0    NaN   c
+
+#纵向合并（axis=1是列）
+
+In [15]: data1=pd.concat([df1,df2],axis=1)
+
+In [16]: data1
+Out[16]: 
+   data2 key  data1  key
+0      0   a    0.0    a
+1      1   b    1.0    b
+2      2   c    2.0    c
+3      3   d    NaN  NaN
+4      4   e    NaN  NaN
+
+多个数据集合并时   data1=pd.concat([df1,df2，....])
+keys 可以判断数据来自哪个数据集，生成一个多重索引。
+In [36]: data=pd.concat([df1,df2],keys=[0,1])
+
+In [37]: data
+Out[37]: 
+     data1  data2 key
+0 0    NaN    0.0   a
+  1    NaN    1.0   b
+  2    NaN    2.0   c
+  3    NaN    3.0   d
+  4    NaN    4.0   e
+1 0    0.0    NaN   a
+  1    1.0    NaN   b
+  2    2.0    NaN   c
+
+Join
+索引上的合并,是增加列而不是增加行
+df3=pd.DataFrame([[1,2],[3,4],[5,6]],index=['a','b','c'],columns=['ao','bo'])
+df4=pd.DataFrame([[7,8],[9,10],[10,12]],index=['e','b','c'],columns=['aoe','boe'])
+
+df3.join(df4,how='outer')
+
+In [38]: df3.join(df4,how='outer')
+Out[38]: 
+  ao   bo   aoe   boe
+a  1.0  2.0   NaN   NaN
+b  3.0  4.0   9.0  10.0
+c  5.0  6.0  10.0  12.0
+e  NaN  NaN   7.0   8.0
+
+当合并的数据表列名字相同，通过lsuffix='', rsuffix='' 区分相同列名的列
+
+df5=pd.DataFrame([[7,8],[9,10],[10,12]],index=['e','b','c'],columns=['aoe','boe'])
+df6=pd.DataFrame([[7,8],[9,10],[10,12]],index=['e','b','c'],columns=['aoe','boe'])
+
+In [43]: df5.join(df6,how='outer',lsuffix='_l', rsuffix='_r')
+Out[43]: 
+   aoe_l  boe_l  aoe_r  boe_r
+e      7      8      7      8
+b      9     10      9     10
+c     10     12     10     12
+
+Combine_first
+若df7的数据缺失,则用df8的数据值填充df1的数据值
+df7 = pd.DataFrame([[np.nan, 3., 5.], [-4.6, np.nan, np.nan],[np.nan, 7., np.nan]])
+df8 = pd.DataFrame([[-42.6, np.nan, -8.2], [-5., 1.6, 4]], index=[1, 2])
+
+In [61]: df7.combine_first(df8)
+Out[61]: 
+     0    1    2
+0  NaN  3.0  5.0
+1 -4.6  NaN -8.2
+2 -5.0  7.0  4.0
+
+作者：大胖子与小胖子
+链接：https://www.jianshu.com/p/baaf8c89c9e2
+来源：简书
+简书著作权归作者所有，任何形式的转载都请联系作者获得授权并注明出处。
